@@ -42,7 +42,7 @@ bool shouldSaveConfig = false;
 
 // OTA variables
 bool otaInProgress = false;
-String currentVersion = "3.1";  // Updated version with OTA support
+String currentVersion = "3.2";  // Updated version with OTA support
 String latestVersion = "";
 String otaUrl = "";
 unsigned long otaStartTime = 0;
