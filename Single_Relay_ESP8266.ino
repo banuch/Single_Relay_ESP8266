@@ -42,11 +42,18 @@ bool shouldSaveConfig = false;
 
 // OTA variables
 bool otaInProgress = false;
-String currentVersion = "3.2";  // Updated version with OTA support
+String currentVersion = "3.2";  // Updated version
 String latestVersion = "";
 String otaUrl = "";
 unsigned long otaStartTime = 0;
 const unsigned long otaTimeout = 300000; // 5 minutes timeout for OTA
+
+// Global variables to track OTA status from callbacks
+volatile bool otaProgressChanged = false;
+volatile int lastOTAProgress = 0;
+volatile bool otaErrorOccurred = false;
+volatile bool otaCompleted = false;
+String otaErrorMessage = "";
 
 // Function declarations
 void setup_wifi_manager();
@@ -59,6 +66,7 @@ void processCommand(String message);
 void processOTACommand(String message);
 void performOTA(String url, String version);
 void checkOTAProgress();
+void handleOTACallbacks();
 void turnRelayOn();
 void turnRelayOff();
 void toggleRelay();
@@ -163,9 +171,9 @@ void setup() {
 void setup_wifi_manager() {
   // Set callback that gets called when connecting to previous WiFi fails, and enters Access Point mode
   wifiManager.setAPCallback([](WiFiManager *myWiFiManager) {
-    Serial.println("🔧 Entered config mode");
-    Serial.println("📶 Connect to WiFi: " + String(myWiFiManager->getConfigPortalSSID()));
-    Serial.println("🌐 Open: http://192.168.4.1");
+    Serial.println("Entered config mode");
+    Serial.println("Connect to WiFi: " + String(myWiFiManager->getConfigPortalSSID()));
+    Serial.println("Open: http://192.168.4.1");
     
     // Blink LED rapidly in config mode
     for (int i = 0; i < 20; i++) {
@@ -197,13 +205,13 @@ void setup_wifi_manager() {
   // Set custom HTML styling
   wifiManager.setCustomHeadElement("<style>.c{text-align: center;} div,input{padding:5px;font-size:1em;} input{width:95%;} body{text-align: center;font-family:verdana;} button{border:0;border-radius:0.3rem;background-color:#1fa3ec;color:#fff;line-height:2.4rem;font-size:1.2rem;width:100%;} .q{float: right;width: 64px;text-align: right;} .l{background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAALVBMVEX///8EBwfBwsLw8PAzNjaCg4NTVVUjJiZDRUUUFxdiZGSho6OSk5Pg4eFydHTCjaf3AAAAZElEQVQ4je2NSw7AIAhEBamKn97/uMXEGBvozkWb9C2Zx4xzWykBhFAeYp9gkLyZE0zIMno9n4g19hmdY39scwqVkOXaxph0ZCXQcqxSpgQpONa59wkRDOL93eAXvimwlbPbwwVAegLS1HGfZAAAAABJRU5ErkJggg==') no-repeat left center;background-size: 1em;}</style>");
   
-  Serial.println("🔧 Starting WiFiManager...");
-  Serial.printf("📶 AP Name: %s\n", ap_name.c_str());
-  Serial.printf("🔐 AP Password: %s\n", ap_pass.c_str());
+  Serial.println("Starting WiFiManager...");
+  Serial.printf("AP Name: %s\n", ap_name.c_str());
+  Serial.printf("AP Password: %s\n", ap_pass.c_str());
   
   // Try to connect to WiFi, if it fails start configuration portal
   if (!wifiManager.autoConnect(ap_name.c_str(), ap_pass.c_str())) {
-    Serial.println("❌ Failed to connect and hit timeout");
+    Serial.println("Failed to connect and hit timeout");
     digitalWrite(LED_PIN, LOW); // Turn on LED to show error
     delay(3000);
     ESP.restart();
@@ -211,12 +219,12 @@ void setup_wifi_manager() {
   
   // If we get here, WiFi is connected
   digitalWrite(LED_PIN, HIGH); // Turn off LED when connected
-  Serial.println("✓ WiFi connected successfully!");
-  Serial.print("📶 SSID: ");
+  Serial.println("WiFi connected successfully!");
+  Serial.print("SSID: ");
   Serial.println(WiFi.SSID());
-  Serial.print("🌐 IP Address: ");
+  Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
-  Serial.print("📶 Signal Strength (RSSI): ");
+  Serial.print("Signal Strength (RSSI): ");
   Serial.print(WiFi.RSSI());
   Serial.println(" dBm");
   
@@ -233,16 +241,16 @@ void setup_wifi_manager() {
 }
 
 void saveConfigCallback() {
-  Serial.println("💾 Should save config");
+  Serial.println("Should save config");
   shouldSaveConfig = true;
 }
 
 void loadConfig() {
-  Serial.println("📖 Loading configuration...");
+  Serial.println("Loading configuration...");
   
   // Check if config exists
   if (EEPROM.read(0) == 'C' && EEPROM.read(1) == 'F' && EEPROM.read(2) == 'G') {
-    Serial.println("✓ Configuration found, loading...");
+    Serial.println("Configuration found, loading...");
     
     // Read MQTT server
     for (int i = 0; i < 40; ++i) {
@@ -259,16 +267,16 @@ void loadConfig() {
       custom_device_name[i] = EEPROM.read(49 + i);
     }
     
-    Serial.printf("📡 MQTT Server: %s\n", custom_mqtt_server);
-    Serial.printf("🔢 MQTT Port: %s\n", custom_mqtt_port);
-    Serial.printf("🏷️ Device Name: %s\n", custom_device_name);
+    Serial.printf("MQTT Server: %s\n", custom_mqtt_server);
+    Serial.printf("MQTT Port: %s\n", custom_mqtt_port);
+    Serial.printf("Device Name: %s\n", custom_device_name);
   } else {
-    Serial.println("ℹ️ No configuration found, using defaults");
+    Serial.println("No configuration found, using defaults");
   }
 }
 
 void saveConfig() {
-  Serial.println("💾 Saving configuration...");
+  Serial.println("Saving configuration...");
   
   // Write config marker
   EEPROM.write(0, 'C');
@@ -291,11 +299,11 @@ void saveConfig() {
   }
   
   EEPROM.commit();
-  Serial.println("✓ Configuration saved!");
+  Serial.println("Configuration saved!");
 }
 
 void resetSettings() {
-  Serial.println("🔄 Resetting WiFi settings...");
+  Serial.println("Resetting WiFi settings...");
   
   // Clear EEPROM config
   for (int i = 0; i < 100; ++i) {
@@ -306,14 +314,14 @@ void resetSettings() {
   // Reset WiFiManager settings
   wifiManager.resetSettings();
   
-  Serial.println("✓ Settings reset! Restarting...");
+  Serial.println("Settings reset! Restarting...");
   publishStatus("WIFI_RESET");
   delay(1000);
   ESP.restart();
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("📥 Message received on topic: ");
+  Serial.print("Message received on topic: ");
   Serial.println(topic);
   
   // Convert payload to string
@@ -322,7 +330,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     message += (char)payload[i];
   }
   
-  Serial.print("📄 Message: ");
+  Serial.print("Message: ");
   Serial.println(message);
   
   // Process command based on topic
@@ -349,15 +357,15 @@ void processCommand(String message) {
   } else if (message == "info") {
     publishDeviceInfo();
   } else if (message == "restart") {
-    Serial.println("🔄 Restart command received");
+    Serial.println("Restart command received");
     publishStatus("RESTARTING");
     delay(1000);
     ESP.restart();
   } else if (message == "reset_wifi") {
-    Serial.println("📶 WiFi reset command received");
+    Serial.println("WiFi reset command received");
     resetSettings();
   } else {
-    Serial.println("❌ Unknown command: " + message);
+    Serial.println("Unknown command: " + message);
     publishError("Unknown command: " + message);
   }
 }
@@ -365,61 +373,85 @@ void processCommand(String message) {
 void processOTACommand(String message) {
   if (otaInProgress) {
     publishOTAStatus("OTA_BUSY", 0);
-    Serial.println("⚠️ OTA already in progress");
+    Serial.println("OTA already in progress");
     return;
   }
+  
+  // Debug: Print raw message
+  Serial.println("Raw OTA message: " + message);
   
   // Parse JSON message
   StaticJsonDocument<512> doc;
   DeserializationError error = deserializeJson(doc, message);
   
   if (error) {
-    Serial.println("❌ Failed to parse OTA JSON: " + String(error.c_str()));
+    Serial.println("Failed to parse OTA JSON: " + String(error.c_str()));
     publishError("Invalid OTA JSON: " + String(error.c_str()));
     return;
   }
   
-  String command = doc["command"];
+  // Debug: Print parsed JSON
+  String debugJson;
+  serializeJson(doc, debugJson);
+  Serial.println("Parsed JSON: " + debugJson);
+  
+  // Check if command exists and is not null
+  if (!doc.containsKey("command") || doc["command"].isNull()) {
+    Serial.println("Command field is missing or null");
+    publishError("OTA command field is missing or null");
+    return;
+  }
+  
+  String command = doc["command"].as<String>();  // Use as<String>() for safety
   command.toLowerCase();
+  command.trim();  // Remove any whitespace
+  
+  Serial.println("Processing OTA command: '" + command + "'");
   
   if (command == "update" || command == "force_update") {
-    String url = doc["url"];
-    String version = doc["version"];
-    
-    if (url.length() == 0) {
+    // Check if URL exists
+    if (!doc.containsKey("url") || doc["url"].isNull()) {
+      Serial.println("URL field is missing or null");
       publishError("OTA URL is required");
       return;
     }
     
-    if (version.length() == 0) {
-      version = "unknown";
+    String url = doc["url"].as<String>();
+    String version = doc.containsKey("version") ? doc["version"].as<String>() : "unknown";
+    
+    if (url.length() == 0) {
+      publishError("OTA URL is empty");
+      return;
     }
     
     // Check if we should update
     if (command == "update" && version == currentVersion) {
       publishOTAStatus("OTA_SKIP", 0);
-      Serial.println("ℹ️ Already on version " + version + ", skipping update");
+      Serial.println("Already on version " + version + ", skipping update");
       return;
     }
     
-    Serial.println("🚀 Starting OTA update...");
-    Serial.println("📦 URL: " + url);
-    Serial.println("🏷️ Version: " + version);
+    Serial.println("Starting OTA update...");
+    Serial.println("URL: " + url);
+    Serial.println("Version: " + version);
     
     performOTA(url, version);
     
   } else if (command == "check_version") {
     publishOTAStatus("VERSION_CHECK", 0);
-    Serial.println("🔍 Current version: " + currentVersion);
+    Serial.println("Current version: " + currentVersion);
     
   } else if (command == "cancel") {
     if (otaInProgress) {
       otaInProgress = false;
       publishOTAStatus("OTA_CANCELLED", 0);
-      Serial.println("🛑 OTA update cancelled");
+      Serial.println("OTA update cancelled");
+    } else {
+      Serial.println("No OTA in progress to cancel");
     }
     
   } else {
+    Serial.println("Unknown OTA command: '" + command + "'");
     publishError("Unknown OTA command: " + command);
   }
 }
@@ -430,89 +462,100 @@ void performOTA(String url, String version) {
   latestVersion = version;
   otaStartTime = millis();
   
+  // Reset callback flags
+  otaProgressChanged = false;
+  otaErrorOccurred = false;
+  otaCompleted = false;
+  lastOTAProgress = 0;
+  otaErrorMessage = "";
+  
+  Serial.println("Publishing OTA_STARTING status...");
   publishOTAStatus("OTA_STARTING", 0);
+  delay(100); // Give time for MQTT message to be sent
   
   // Disable relay during update for safety
   if (relayState) {
     turnRelayOff();
-    Serial.println("🔒 Relay disabled for safety during OTA");
+    Serial.println("Relay disabled for safety during OTA");
   }
   
-  // Set up progress callback
+  // Set up progress callback - use flags instead of direct MQTT calls
   ESPhttpUpdate.onProgress([](int cur, int total) {
-    static unsigned long lastProgress = 0;
+    static unsigned long lastProgressTime = 0;
     int progress = (cur * 100) / total;
     
-    // Only publish progress every 10% to avoid spam
-    if (millis() - lastProgress > 2000 || progress == 100) {
+    // Only update progress every 10% or every 2 seconds to avoid spam
+    if (millis() - lastProgressTime > 2000 || progress == 100 || progress != lastOTAProgress) {
       Serial.printf("OTA Progress: %d%% (%d/%d bytes)\n", progress, cur, total);
-      publishOTAStatus("OTA_PROGRESS", progress);
-      lastProgress = millis();
+      lastOTAProgress = progress;
+      otaProgressChanged = true;
+      lastProgressTime = millis();
     }
     
     // Blink LED during update
     digitalWrite(LED_PIN, !digitalRead(LED_PIN));
   });
   
-  // Set up error callback
+  // Set up error callback - use flags instead of direct MQTT calls
   ESPhttpUpdate.onError([](int error) {
-    String errorMsg = "OTA Error " + String(error) + ": ";
+    otaErrorMessage = "OTA Error " + String(error) + ": ";
     switch(error) {
       case HTTP_UE_TOO_LESS_SPACE:
-        errorMsg += "Not enough space";
+        otaErrorMessage += "Not enough space";
         break;
       case HTTP_UE_SERVER_NOT_REPORT_SIZE:
-        errorMsg += "Server doesn't report size";
+        otaErrorMessage += "Server doesn't report size";
         break;
       case HTTP_UE_SERVER_FILE_NOT_FOUND:
-        errorMsg += "File not found";
+        otaErrorMessage += "File not found";
         break;
       case HTTP_UE_SERVER_FORBIDDEN:
-        errorMsg += "Forbidden";
+        otaErrorMessage += "Forbidden";
         break;
       case HTTP_UE_SERVER_WRONG_HTTP_CODE:
-        errorMsg += "Wrong HTTP code";
+        otaErrorMessage += "Wrong HTTP code";
         break;
       case HTTP_UE_SERVER_FAULTY_MD5:
-        errorMsg += "Faulty MD5";
+        otaErrorMessage += "Faulty MD5";
         break;
       case HTTP_UE_BIN_VERIFY_HEADER_FAILED:
-        errorMsg += "Verify header failed";
+        otaErrorMessage += "Verify header failed";
         break;
       case HTTP_UE_BIN_FOR_WRONG_FLASH:
-        errorMsg += "Wrong flash config";
+        otaErrorMessage += "Wrong flash config";
         break;
       default:
-        errorMsg += "Unknown error";
+        otaErrorMessage += "Unknown error";
         break;
     }
     
-    Serial.println("❌ " + errorMsg);
-    publishOTAStatus("OTA_ERROR", 0);
-    publishError(errorMsg);
+    Serial.println(otaErrorMessage);
+    otaErrorOccurred = true;
   });
   
-  // Set up end callback
+  // Set up end callback - use flags instead of direct MQTT calls
   ESPhttpUpdate.onEnd([]() {
-    Serial.println("✓ OTA Update completed successfully!");
-    publishOTAStatus("OTA_SUCCESS", 100);
+    Serial.println("OTA Update completed successfully!");
+    otaCompleted = true;
     totalOTAUpdates++;
   });
   
   // Perform the update
-  WiFiClient client;
+  WiFiClient updateClient;
   t_httpUpdate_return result;
+  
+  Serial.println("Starting download from: " + url);
   
   if (url.startsWith("https://")) {
     result = ESPhttpUpdate.update(secureClient, url);
   } else {
-    result = ESPhttpUpdate.update(client, url);
+    result = ESPhttpUpdate.update(updateClient, url);
   }
   
-  // Handle result
+  // Handle result and publish status accordingly
   switch(result) {
     case HTTP_UPDATE_FAILED:
-      Serial.printf("❌ OTA Update failed. Error (%d): %s\n", 
+      Serial.printf("OTA Update failed. Error (%d): %s\n", 
                    ESPhttpUpdate.getLastError(), 
                    ESPhttpUpdate.getLastErrorString().c_str());
       publishOTAStatus("OTA_FAILED", 0);
@@ -520,12 +563,12 @@ void performOTA(String url, String version) {
       break;
       
     case HTTP_UPDATE_NO_UPDATES:
-      Serial.println("ℹ️ OTA: No updates available");
+      Serial.println("OTA: No updates available");
       publishOTAStatus("OTA_NO_UPDATE", 0);
       break;
       
     case HTTP_UPDATE_OK:
-      Serial.println("✓ OTA Update OK! Restarting...");
+      Serial.println("OTA Update OK! Publishing success and restarting...");
       publishOTAStatus("OTA_COMPLETE", 100);
       delay(1000);
       ESP.restart();
@@ -535,9 +578,34 @@ void performOTA(String url, String version) {
   otaInProgress = false;
 }
 
+// Handle OTA status updates in the main loop
+void handleOTACallbacks() {
+  if (!otaInProgress) return;
+  
+  // Handle progress updates
+  if (otaProgressChanged) {
+    publishOTAStatus("OTA_PROGRESS", lastOTAProgress);
+    otaProgressChanged = false;
+  }
+  
+  // Handle errors
+  if (otaErrorOccurred) {
+    publishOTAStatus("OTA_ERROR", 0);
+    publishError(otaErrorMessage);
+    otaErrorOccurred = false;
+    otaInProgress = false; // Stop OTA process
+  }
+  
+  // Handle completion
+  if (otaCompleted) {
+    publishOTAStatus("OTA_SUCCESS", 100);
+    otaCompleted = false;
+  }
+}
+
 void checkOTAProgress() {
   if (otaInProgress && (millis() - otaStartTime > otaTimeout)) {
-    Serial.println("⏰ OTA timeout reached");
+    Serial.println("OTA timeout reached");
     publishOTAStatus("OTA_TIMEOUT", 0);
     publishError("OTA update timeout");
     otaInProgress = false;
@@ -546,7 +614,7 @@ void checkOTAProgress() {
 
 void turnRelayOn() {
   if (otaInProgress) {
-    Serial.println("🔒 Relay control disabled during OTA");
+    Serial.println("Relay control disabled during OTA");
     publishError("Relay control disabled during OTA");
     return;
   }
@@ -554,7 +622,7 @@ void turnRelayOn() {
   digitalWrite(RELAY_PIN, HIGH);
   digitalWrite(LED_PIN, LOW);  // Turn LED on (inverted logic)
   relayState = true;
-  Serial.println("🔛 Relay turned ON");
+  Serial.println("Relay turned ON");
   publishStatus();
   
   // Visual feedback - quick blinks
@@ -570,7 +638,7 @@ void turnRelayOff() {
   digitalWrite(RELAY_PIN, LOW);
   digitalWrite(LED_PIN, HIGH); // Turn LED off (inverted logic)
   relayState = false;
-  Serial.println("🔴 Relay turned OFF");
+  Serial.println("Relay turned OFF");
   publishStatus();
 }
 
@@ -580,12 +648,12 @@ void toggleRelay() {
   } else {
     turnRelayOn();
   }
-  Serial.println("🔄 Relay toggled");
+  Serial.println("Relay toggled");
 }
 
 void publishStatus(String customStatus) {
   if (!client.connected()) {
-    Serial.println("❌ Cannot publish status - MQTT not connected");
+    Serial.println("Cannot publish status - MQTT not connected");
     return;
   }
   
@@ -609,8 +677,12 @@ void publishStatus(String customStatus) {
   String statusMessage;
   serializeJson(doc, statusMessage);
   
-  client.publish(mqtt_topic_status.c_str(), statusMessage.c_str());
-  Serial.println("📤 Status published: " + statusMessage);
+  bool published = client.publish(mqtt_topic_status.c_str(), statusMessage.c_str());
+  if (published) {
+    Serial.println("Status published: " + statusMessage);
+  } else {
+    Serial.println("Failed to publish status");
+  }
 }
 
 void publishDeviceInfo() {
@@ -642,7 +714,7 @@ void publishDeviceInfo() {
   serializeJson(doc, infoMessage);
   
   client.publish((mqtt_topic_status + "/info").c_str(), infoMessage.c_str());
-  Serial.println("📊 Device info published");
+  Serial.println("Device info published");
 }
 
 void publishError(String error) {
@@ -658,8 +730,12 @@ void publishError(String error) {
   String errorMessage;
   serializeJson(doc, errorMessage);
   
-  client.publish((mqtt_topic_status + "/error").c_str(), errorMessage.c_str());
-  Serial.println("❌ Error published: " + error);
+  bool published = client.publish((mqtt_topic_status + "/error").c_str(), errorMessage.c_str());
+  if (published) {
+    Serial.println("Error published: " + error);
+  } else {
+    Serial.println("Failed to publish error: " + error);
+  }
 }
 
 void publishHeartbeat() {
@@ -682,14 +758,21 @@ void publishHeartbeat() {
   String heartbeat;
   serializeJson(doc, heartbeat);
   
-  client.publish(mqtt_topic_heartbeat.c_str(), heartbeat.c_str());
-  Serial.println("💓 Heartbeat sent");
+  bool published = client.publish(mqtt_topic_heartbeat.c_str(), heartbeat.c_str());
+  if (published) {
+    Serial.println("Heartbeat sent");
+  } else {
+    Serial.println("Failed to send heartbeat");
+  }
 }
 
 void publishOTAStatus(String status, int progress) {
-  if (!client.connected()) return;
+  if (!client.connected()) {
+    Serial.println("Cannot publish OTA status - MQTT not connected");
+    return;
+  }
   
-  StaticJsonDocument<300> doc;
+  StaticJsonDocument<350> doc;
   doc["device_id"] = device_id;
   doc["device_name"] = custom_device_name;
   doc["ota_status"] = status;
@@ -712,25 +795,35 @@ void publishOTAStatus(String status, int progress) {
   String otaMessage;
   serializeJson(doc, otaMessage);
   
-  client.publish(mqtt_topic_ota.c_str(), otaMessage.c_str());
-  Serial.println("🚀 OTA Status: " + status + (progress >= 0 ? " (" + String(progress) + "%)" : ""));
+  bool published = client.publish(mqtt_topic_ota.c_str(), otaMessage.c_str());
+  
+  if (published) {
+    Serial.println("OTA Status Published: " + status + (progress >= 0 ? " (" + String(progress) + "%)" : ""));
+    Serial.println("Published to topic: " + String(mqtt_topic_ota.c_str()));
+    Serial.println("Message content: " + otaMessage);
+  } else {
+    Serial.println("Failed to publish OTA status: " + status);
+  }
+  
+  // Force MQTT to process
+  client.loop();
 }
 
 void reconnectMQTT() {
   int attempts = 0;
   while (!client.connected() && attempts < 5) {
-    Serial.print("🔄 Attempting MQTT connection... ");
+    Serial.print("Attempting MQTT connection... ");
     
     if (client.connect(mqtt_client_id.c_str())) {
       totalReconnects++;
-      Serial.println("✓ Connected to MQTT broker!");
+      Serial.println("Connected to MQTT broker!");
       Serial.println("Client ID: " + mqtt_client_id);
       
       // Subscribe to command topics
       client.subscribe(mqtt_topic_command.c_str());
       client.subscribe(mqtt_topic_ota.c_str());  // Subscribe to OTA topic
-      Serial.println("📝 Subscribed to: " + mqtt_topic_command);
-      Serial.println("📝 Subscribed to: " + mqtt_topic_ota);
+      Serial.println("Subscribed to: " + mqtt_topic_command);
+      Serial.println("Subscribed to: " + mqtt_topic_ota);
       
       // Publish connection status
       StaticJsonDocument<300> doc;
@@ -750,7 +843,7 @@ void reconnectMQTT() {
       publishStatus();
       
     } else {
-      Serial.print("❌ Failed to connect, rc=");
+      Serial.print("Failed to connect, rc=");
       Serial.print(client.state());
       Serial.println(" Retrying in 5 seconds...");
       
@@ -772,11 +865,11 @@ void checkButton() {
   
   if (buttonState != lastButtonState && buttonState == LOW) {
     if (millis() - lastButtonPress > 300) {  // Debounce
-      Serial.println("🔘 Manual button pressed");
+      Serial.println("Manual button pressed");
       
       // Don't allow manual control during OTA
       if (otaInProgress) {
-        Serial.println("🔒 Manual control disabled during OTA");
+        Serial.println("Manual control disabled during OTA");
         // Quick error blink
         for (int i = 0; i < 6; i++) {
           digitalWrite(LED_PIN, !digitalRead(LED_PIN));
@@ -802,7 +895,7 @@ void checkEmergencyReset() {
       buttonPressed = true;
       buttonPressStart = millis();
     } else if (millis() - buttonPressStart > 5000) {
-      Serial.println("🚨 Emergency reset triggered!");
+      Serial.println("Emergency reset triggered!");
       publishStatus("EMERGENCY_RESET");
       delay(500);
       ESP.restart();
@@ -823,7 +916,7 @@ void checkConfigReset() {
       resetWarningShown = false;
       buttonPressStart = millis();
     } else if (millis() - buttonPressStart > 10000 && !resetWarningShown) {
-      Serial.println("🔧 WiFi reset in progress...");
+      Serial.println("WiFi reset in progress...");
       publishStatus("WIFI_RESETTING");
       resetWarningShown = true;
       
@@ -845,6 +938,7 @@ void loop() {
   // Check OTA progress and timeout
   if (otaInProgress) {
     checkOTAProgress();
+    handleOTACallbacks(); // Handle OTA callback flags
     
     // Blink LED slowly during OTA
     static unsigned long lastOTABlink = 0;
@@ -857,7 +951,7 @@ void loop() {
   // Check WiFi connection periodically
   if (millis() - lastWiFiCheck > wifiCheckInterval) {
     if (WiFi.status() != WL_CONNECTED) {
-      Serial.println("📶 WiFi connection lost. Trying to reconnect...");
+      Serial.println("WiFi connection lost. Trying to reconnect...");
       digitalWrite(LED_PIN, LOW);
       
       // Try to reconnect without starting config portal
@@ -871,11 +965,11 @@ void loop() {
       
       if (WiFi.status() == WL_CONNECTED) {
         Serial.println();
-        Serial.println("✓ WiFi reconnected!");
+        Serial.println("WiFi reconnected!");
         digitalWrite(LED_PIN, relayState ? LOW : HIGH);
       } else {
         Serial.println();
-        Serial.println("❌ Failed to reconnect to WiFi");
+        Serial.println("Failed to reconnect to WiFi");
       }
     }
     lastWiFiCheck = millis();
@@ -913,17 +1007,17 @@ void loop() {
   // Monitor memory usage
   static unsigned long lastMemCheck = 0;
   if (millis() - lastMemCheck > 60000) { // Every minute
-    Serial.printf("💾 Free Heap: %u bytes, Uptime: %lu seconds, Commands: %lu, OTA Updates: %lu\n", 
+    Serial.printf("Free Heap: %u bytes, Uptime: %lu seconds, Commands: %lu, OTA Updates: %lu\n", 
                   ESP.getFreeHeap(), millis()/1000, totalCommands, totalOTAUpdates);
     
     // Check for low memory
     if (ESP.getFreeHeap() < 10000) {
-      Serial.println("⚠️ Warning: Low memory!");
+      Serial.println("Warning: Low memory!");
       publishError("Low memory: " + String(ESP.getFreeHeap()) + " bytes");
       
       // Cancel OTA if in progress due to low memory
       if (otaInProgress) {
-        Serial.println("🛑 Cancelling OTA due to low memory");
+        Serial.println("Cancelling OTA due to low memory");
         otaInProgress = false;
         publishOTAStatus("OTA_CANCELLED", 0);
         publishError("OTA cancelled due to low memory");
