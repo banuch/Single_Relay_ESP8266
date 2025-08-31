@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP8266 MQTT Relay Controller Documentation</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0.75in;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            font-size: 11pt;
+        }
+        
+        .cover-page {
+            text-align: center;
+            page-break-after: always;
+            padding-top: 2in;
+        }
+        
+        .cover-page h1 {
+            font-size: 36pt;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .cover-page h2 {
+            font-size: 24pt;
+            color: #7f8c8d;
+            margin-bottom: 40px;
+            font-weight: normal;
+        }
+        
+        .cover-page .version {
+            font-size: 18pt;
+            color: #e74c3c;
+            margin-bottom: 60px;
+        }
+        
+        .cover-page .info {
+            font-size: 14pt;
+            color: #34495e;
+            line-height: 2;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 30px;
+            page-break-before: auto;
+            font-size: 24pt;
+        }
+        
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #bdc3c7;
+            padding-bottom: 5px;
+            margin-top: 25px;
+            font-size: 18pt;
+        }
+        
+        h3 {
+            color: #7f8c8d;
+            margin-top: 20px;
+            font-size: 14pt;
+        }
+        
+        h4 {
+            color: #95a5a6;
+            margin-top: 15px;
+            font-size: 12pt;
+        }
+        
+        pre, code {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 8px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 9pt;
+            overflow-x: auto;
+        }
+        
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 10px 0;
+            page-break-inside: avoid;
+        }
+        
+        .command-block {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 9pt;
+            page-break-inside: avoid;
+        }
+        
+        .json-block {
+            background-color: #f4f4f4;
+            border-left: 4px solid #3498db;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 9pt;
+            page-break-inside: avoid;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            page-break-inside: avoid;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            font-size: 9pt;
+        }
+        
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        .toc {
+            page-break-after: always;
+        }
+        
+        .toc h1 {
+            text-align: center;
+        }
+        
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .toc li {
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px dotted #ccc;
+        }
+        
+        .toc a {
+            text-decoration: none;
+            color: #2c3e50;
+        }
+        
+        .warning {
+            background-color: #ffeaa7;
+            border: 1px solid #fdcb6e;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            page-break-inside: avoid;
+        }
+        
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            page-break-inside: avoid;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            page-break-inside: avoid;
+        }
+        
+        .script-section {
+            background-color: #f8f9fa;
+            border: 2px solid #6c757d;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            page-break-inside: avoid;
+        }
+        
+        .script-title {
+            color: #495057;
+            font-weight: bold;
+            font-size: 12pt;
+            margin-bottom: 10px;
+        }
+        
+        @media print {
+            body { font-size: 10pt; }
+            h1 { font-size: 20pt; }
+            h2 { font-size: 16pt; }
+            h3 { font-size: 12pt; }
+            h4 { font-size: 11pt; }
+            pre, code { font-size: 8pt; }
+            th, td { font-size: 8pt; }
+            .command-block { font-size: 8pt; }
+            .json-block { font-size: 8pt; }
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+        
+        .no-break {
+            page-break-inside: avoid;
+        }
+    </style>
+</head>
+<body>
+
+<div class="cover-page">
+    <h1>ESP8266 MQTT Relay Controller</h1>
+    <h2>Complete Documentation & Windows Automation Scripts</h2>
+    <div class="version">Version 3.2</div>
+    <div class="info">
+        IoT Device Control with WiFi Management<br>
+        MQTT Communication & OTA Updates<br>
+        Windows Batch Script Automation<br><br>
+        Generated: <span id="currentDate"></span>
+    </div>
+</div>
+
+<div class="toc">
+    <h1>Table of Contents</h1>
+    <ul>
+        <li><a href="#overview">1. Overview</a></li>
+        <li><a href="#hardware">2. Hardware Requirements</a></li>
+        <li><a href="#software">3. Software Dependencies</a></li>
+        <li><a href="#configuration">4. Configuration</a></li>
+        <li><a href="#setup">5. Setup and Installation</a></li>
+        <li><a href="#commands">6. Command Reference (Windows)</a></li>
+        <li><a href="#batch-scripts">7. Windows Batch Scripts</a></li>
+        <li><a href="#status-messages">8. Status Messages</a></li>
+        <li><a href="#physical-controls">9. Physical Controls</a></li>
+        <li><a href="#safety">10. Safety Features</a></li>
+        <li><a href="#troubleshooting">11. Troubleshooting</a></li>
+        <li><a href="#advanced">12. Advanced Configuration</a></li>
+        <li><a href="#integration">13. API Integration Examples</a></li>
+        <li><a href="#maintenance">14. Maintenance Scripts</a></li>
+        <li><a href="#reference">15. Quick Reference</a></li>
+    </ul>
+</div>
+
+<div class="page-break">
+<h1 id="overview">1. Overview</h1>
+<p>This firmware provides a complete IoT relay control solution for ESP8266 microcontrollers with advanced features including WiFi management, MQTT communication, Over-The-Air (OTA) updates, and comprehensive device monitoring.</p>
+
+<h2>Key Features</h2>
+<ul>
+    <li><strong>WiFi Management</strong>: Auto-configuration portal using WiFiManager</li>
+    <li><strong>MQTT Communication</strong>: Secure, reliable MQTT messaging with JSON payloads</li>
+    <li><strong>OTA Updates</strong>: Remote firmware updates via HTTPS/HTTP</li>
+    <li><strong>Device Monitoring</strong>: Real-time status reporting and heartbeat monitoring</li>
+    <li><strong>Manual Control</strong>: Physical button with multiple functions</li>
+    <li><strong>Safety Features</strong>: Emergency reset, configuration reset, and OTA safety locks</li>
+    <li><strong>Comprehensive Logging</strong>: Detailed serial output for debugging</li>
+</ul>
+</div>
+
+<div class="page-break">
+<h1 id="hardware">2. Hardware Requirements</h1>
+
+<h2>Pinout Configuration</h2>
+<table>
+    <tr>
+        <th>GPIO Pin</th>
+        <th>Function</th>
+        <th>Description</th>
+    </tr>
+    <tr>
+        <td>D1 (GPIO5)</td>
+        <td>RELAY_PIN</td>
+        <td>Controls the relay (active HIGH)</td>
+    </tr>
+    <tr>
+        <td>D3 (GPIO0)</td>
+        <td>BUTTON_PIN</td>
+        <td>Manual control button (pull-up)</td>
+    </tr>
+    <tr>
+        <td>GPIO2</td>
+        <td>LED_PIN</td>
+        <td>Built-in LED (inverted logic)</td>
+    </tr>
+</table>
+
+<h2>Required Components</h2>
+<ul>
+    <li>ESP8266 development board (NodeMCU, Wemos D1, etc.)</li>
+    <li>5V/3.3V relay module</li>
+    <li>Push button (optional - for manual control)</li>
+    <li>Power supply (5V recommended for relay operation)</li>
+</ul>
+</div>
+
+<div class="page-break">
+<h1 id="software">3. Software Dependencies</h1>
+
+<h2>Arduino Libraries</h2>
+<pre><code>#include &lt;ESP8266WiFi.h&gt;      // Core WiFi functionality
+#include &lt;PubSubClient.h&gt;     // MQTT communication
+#include &lt;ArduinoJson.h&gt;      // JSON parsing and generation
+#include &lt;WiFiManager.h&gt;      // WiFi configuration portal
+#include &lt;EEPROM.h&gt;           // Configuration storage
+#include &lt;ESP8266httpUpdate.h&gt; // OTA update functionality
+#include &lt;WiFiClientSecure.h&gt; // HTTPS support
+#include &lt;ESP8266HTTPClient.h&gt; // HTTP client</code></pre>
+</div>
+
+<div class="page-break">
+<h1 id="configuration">4. Configuration</h1>
+
+<h2>Default Settings</h2>
+<ul>
+    <li><strong>MQTT Broker</strong>: broker.emqx.io</li>
+    <li><strong>MQTT Port</strong>: 1883</li>
+    <li><strong>WiFi AP Name</strong>: ESP8266_Relay_[ChipID]</li>
+    <li><strong>WiFi AP Password</strong>: relay123</li>
+    <li><strong>Configuration Timeout</strong>: 5 minutes</li>
+    <li><strong>Heartbeat Interval</strong>: 60 seconds</li>
+    <li><strong>OTA Timeout</strong>: 5 minutes</li>
+</ul>
+
+<h2>MQTT Topics Structure</h2>
+<p>All topics are dynamically generated based on device ChipID:</p>
+<div class="info">
+    <strong>Base Pattern:</strong> home/relay/[DEVICE_ID]/[TOPIC]<br><br>
+    <strong>Topics:</strong><br>
+    • home/relay/[DEVICE_ID]/command - Receive commands<br>
+    • home/relay/[DEVICE_ID]/status - Publish status updates<br>
+    • home/relay/[DEVICE_ID]/heartbeat - Periodic health check<br>
+    • home/relay/[DEVICE_ID]/connection - Connection events<br>
+    • home/relay/[DEVICE_ID]/ota - OTA update commands/status
+</div>
+</div>
+
+<div class="page-break">
+<h1 id="setup">5. Setup and Installation</h1>
+
+<h2>Initial Setup</h2>
+<ol>
+    <li>Flash the firmware to your ESP8266</li>
+    <li>Power on the device</li>
+    <li>Connect to WiFi network ESP8266_Relay_[ChipID] with password "relay123"</li>
+    <li>Navigate to http://192.168.4.1</li>
+    <li>Configure your WiFi credentials and MQTT settings</li>
+    <li>Save configuration and restart</li>
+</ol>
+
+<h2>MQTT Configuration</h2>
+<p>The web portal allows configuration of:</p>
+<ul>
+    <li><strong>MQTT Server</strong>: Broker hostname/IP</li>
+    <li><strong>MQTT Port</strong>: Broker port (default: 1883)</li>
+    <li><strong>Device Name</strong>: Human-readable device identifier</li>
+</ul>
+</div>
+
+<div class="page-break">
+<h1 id="commands">6. Command Reference (Windows)</h1>
+<div class="warning">
+    <strong>Note:</strong> Replace [DEVICE_ID] with your actual device ID (e.g., a1b2c3)
+</div>
+
+<h2>Basic Relay Commands</h2>
+
+<h3>Turn Relay ON</h3>
+<div class="command-block">
+mosquitto_pub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/command" -m "on"
+mosquitto_pub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/command" -m "1"
+mosquitto_pub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/command" -m "true"
+</div>
+
+<h3>Turn Relay OFF</h3>
+<div class="command-block">
+mosquitto_pub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/command" -m "off"
+mosquitto_pub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/command" -m "0"
+mosquitto_pub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/command" -m "false"
+</div>
+
+<h3>Toggle Relay State</h3>
+<div class="command-block">
+mosquitto_pub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/command" -m "toggle"
+</div>
+
+<h3>Request Current Status</h3>
+<div class="command-block">
+mosquitto_pub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/command" -m "status"
+</div>
+
+<h2>OTA Update Commands</h2>
+
+<h3>Check Current Version</h3>
+<div class="command-block">
+mosquitto_pub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/ota" -m "{\"command\": \"check_version\"}"
+</div>
+
+<h3>Perform Firmware Update</h3>
+<div class="command-block">
+mosquitto_pub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/ota" -m "{\"command\": \"update\", \"url\": \"https://example.com/firmware.bin\", \"version\": \"3.3\"}"
+</div>
+
+<h2>Monitoring Commands</h2>
+
+<h3>Monitor All Device Topics</h3>
+<div class="command-block">
+mosquitto_sub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/+"
+</div>
+
+<h3>Monitor Status Updates Only</h3>
+<div class="command-block">
+mosquitto_sub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/status"
+</div>
+</div>
+
+<div class="page-break">
+<h1 id="batch-scripts">7. Windows Batch Scripts</h1>
+
+<div class="script-section">
+<div class="script-title">Basic Control Script (relay_control.bat)</div>
+<pre><code>@echo off
+setlocal enabledelayedexpansion
+
+:: Configuration
+set DEVICE_ID=a1b2c3
+set BROKER=broker.emqx.io
+set MQTT_PUB=mosquitto_pub.exe
+
+echo ESP8266 Relay Controller
+echo Device ID: %DEVICE_ID%
+echo Broker: %BROKER%
+echo.
+
+:menu
+echo Choose an option:
+echo 1. Turn Relay ON
+echo 2. Turn Relay OFF
+echo 3. Toggle Relay
+echo 4. Get Status
+echo 5. Exit
+echo.
+set /p choice=Enter choice (1-5): 
+
+if "%choice%"=="1" (
+    echo Turning relay ON...
+    %MQTT_PUB% -h %BROKER% -t "home/relay/%DEVICE_ID%/command" -m "on"
+    echo Command sent.
+    goto menu
+)
+if "%choice%"=="2" (
+    echo Turning relay OFF...
+    %MQTT_PUB% -h %BROKER% -t "home/relay/%DEVICE_ID%/command" -m "off"
+    echo Command sent.
+    goto menu
+)
+if "%choice%"=="3" (
+    echo Toggling relay...
+    %MQTT_PUB% -h %BROKER% -t "home/relay/%DEVICE_ID%/command" -m "toggle"
+    echo Command sent.
+    goto menu
+)
+if "%choice%"=="4" (
+    echo Getting status...
+    %MQTT_PUB% -h %BROKER% -t "home/relay/%DEVICE_ID%/command" -m "status"
+    echo Command sent.
+    goto menu
+)
+if "%choice%"=="5" (
+    echo Goodbye!
+    exit /b 0
+)
+
+echo Invalid choice. Please try again.
+goto menu</code></pre>
+</div>
+
+<div class="script-section">
+<div class="script-title">Device Monitor Script (device_monitor.bat)</div>
+<pre><code>@echo off
+setlocal enabledelayedexpansion
+
+:: Configuration
+set DEVICE_ID=a1b2c3
+set BROKER=broker.emqx.io
+set MQTT_SUB=mosquitto_sub.exe
+
+echo ESP8266 Device Monitor
+echo Device ID: %DEVICE_ID%
+echo Broker: %BROKER%
+echo.
+
+:menu
+echo Choose monitoring option:
+echo 1. Monitor All Topics
+echo 2. Monitor Status Only
+echo 3. Monitor Heartbeat
+echo 4. Monitor with Log File
+echo 5. Exit
+echo.
+set /p choice=Enter choice (1-5): 
+
+if "%choice%"=="1" (
+    echo Monitoring all topics (Press Ctrl+C to stop)...
+    %MQTT_SUB% -h %BROKER% -t "home/relay/%DEVICE_ID%/+" -v
+    goto menu
+)
+if "%choice%"=="2" (
+    echo Monitoring status updates (Press Ctrl+C to stop)...
+    %MQTT_SUB% -h %BROKER% -t "home/relay/%DEVICE_ID%/status" -v
+    goto menu
+)
+
+echo Invalid choice. Please try again.
+goto menu</code></pre>
+</div>
+</div>
+
+<div class="page-break">
+<h1 id="status-messages">8. Status Messages</h1>
+
+<h2>Device Status (Published to /status)</h2>
+<div class="json-block">
+{
+  "device_id": "a1b2c3",
+  "device_name": "ESP8266_a1b2c3", 
+  "relay": "ON",
+  "uptime": 12345,
+  "free_heap": 32768,
+  "rssi": -45,
+  "ip": "192.168.1.100",
+  "ssid": "MyWiFi",
+  "firmware_version": "3.2",
+  "ota_in_progress": false,
+  "timestamp": 67890
+}
+</div>
+
+<h2>OTA Status Values</h2>
+<table>
+    <tr><th>Status</th><th>Description</th></tr>
+    <tr><td>OTA_STARTING</td><td>Update process initiated</td></tr>
+    <tr><td>OTA_PROGRESS</td><td>Update in progress (includes progress %)</td></tr>
+    <tr><td>OTA_COMPLETE</td><td>Update completed successfully</td></tr>
+    <tr><td>OTA_FAILED</td><td>Update failed</td></tr>
+    <tr><td>OTA_TIMEOUT</td><td>Update timed out</td></tr>
+    <tr><td>OTA_CANCELLED</td><td>Update was cancelled</td></tr>
+</table>
+</div>
+
+<div class="page-break">
+<h1 id="physical-controls">9. Physical Controls</h1>
+
+<h2>Button Functions</h2>
+<p>The physical button provides multiple functions based on press duration:</p>
+<ul>
+    <li><strong>Short Press</strong> (&lt; 300ms): Toggle relay state</li>
+    <li><strong>Long Press</strong> (5+ seconds): Emergency restart</li>
+    <li><strong>Extended Press</strong> (10+ seconds): Reset WiFi configuration</li>
+</ul>
+
+<h2>LED Indicators</h2>
+<p>The built-in LED provides visual feedback:</p>
+<ul>
+    <li><strong>Solid ON</strong>: Relay is OFF, WiFi connected</li>
+    <li><strong>Solid OFF</strong>: Relay is ON, WiFi connected</li>
+    <li><strong>Fast Blink</strong>: Configuration mode active</li>
+    <li><strong>Slow Blink</strong>: OTA update in progress</li>
+    <li><strong>Continuous Blink</strong>: WiFi/MQTT connection issues</li>
+</ul>
+</div>
+
+<div class="page-break">
+<h1 id="safety">10. Safety Features</h1>
+
+<h2>OTA Safety</h2>
+<ul>
+    <li>Relay is automatically disabled during OTA updates</li>
+    <li>Manual relay control is blocked during OTA</li>
+    <li>Low memory detection cancels OTA process</li>
+    <li>5-minute timeout prevents stuck updates</li>
+    <li>Progress monitoring with detailed error reporting</li>
+</ul>
+
+<h2>Memory Management</h2>
+<ul>
+    <li>Continuous heap memory monitoring</li>
+    <li>Low memory warnings (&lt; 10KB free)</li>
+    <li>Automatic OTA cancellation on low memory</li>
+    <li>Regular memory usage reporting</li>
+</ul>
+
+<h2>Network Resilience</h2>
+<ul>
+    <li>Automatic WiFi reconnection</li>
+    <li>MQTT connection monitoring with auto-reconnect</li>
+    <li>Configurable retry limits and timeouts</li>
+    <li>Graceful degradation during network issues</li>
+</ul>
+</div>
+
+<div class="page-break">
+<h1 id="troubleshooting">11. Troubleshooting</h1>
+
+<h2>Common Issues</h2>
+
+<h3>Device Not Connecting to WiFi</h3>
+<ol>
+    <li>Check if device is in configuration mode (LED blinking fast)</li>
+    <li>Connect to ESP8266_Relay_[ChipID] network</li>
+    <li>Navigate to http://192.168.4.1</li>
+    <li>Verify WiFi credentials and save configuration</li>
+    <li>Hold button for 10+ seconds to reset if needed</li>
+</ol>
+
+<h3>MQTT Connection Issues</h3>
+<div class="command-block">
+:: Test MQTT broker connectivity
+mosquitto_pub.exe -h broker.emqx.io -t "test/topic" -m "test message"
+
+:: Check if device is publishing heartbeat
+timeout 65 mosquitto_sub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/heartbeat" -C 1
+
+:: Test command reception
+mosquitto_pub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/command" -m "status"
+</div>
+
+<h3>Memory Issues</h3>
+<div class="command-block">
+:: Monitor device status for memory information
+mosquitto_sub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/status" | findstr "free_heap"
+
+:: Check for error messages
+mosquitto_sub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/status/error"
+</div>
+</div>
+
+<div class="page-break">
+<h1 id="advanced">12. Advanced Configuration</h1>
+
+<h2>Custom MQTT Broker Commands</h2>
+<div class="command-block">
+:: Test custom broker connectivity
+mosquitto_pub.exe -h your-broker.com -p 1883 -t "test" -m "connection test"
+
+:: Monitor with custom broker
+mosquitto_sub.exe -h your-broker.com -p 1883 -t "home/relay/[DEVICE_ID]/+"
+</div>
+
+<h2>Secure MQTT (with authentication)</h2>
+<div class="command-block">
+:: Connect with username/password
+mosquitto_pub.exe -h broker.emqx.io -u username -P password -t "home/relay/[DEVICE_ID]/command" -m "status"
+
+:: Monitor with authentication
+mosquitto_sub.exe -h broker.emqx.io -u username -P password -t "home/relay/[DEVICE_ID]/+"
+</div>
+</div>
+
+<div class="page-break">
+<h1 id="integration">13. API Integration Examples</h1>
+
+<h2>Home Assistant Integration</h2>
+<div class="json-block">
+# configuration.yaml
+switch:
+  - platform: mqtt
+    name: "ESP8266 Relay"
+    command_topic: "home/relay/a1b2c3/command"
+    state_topic: "home/relay/a1b2c3/status"
+    value_template: "{{ value_json.relay }}"
+    payload_on: "on"
+    payload_off: "off"
+
+sensor:
+  - platform: mqtt
+    name: "ESP8266 Uptime"
+    state_topic: "home/relay/a1b2c3/heartbeat"
+    value_template: "{{ value_json.uptime }}"
+    unit_of_measurement: "seconds"
+</div>
+
+<h2>PowerShell Integration</h2>
+<pre><code># ESP8266 PowerShell Control Script
+param(
+    [string]$DeviceId = "a1b2c3",
+    [string]$Broker = "broker.emqx.io",
+    [string]$Command = "status"
+)
+
+$MQTTPub = "mosquitto_pub.exe"
+
+function Send-RelayCommand {
+    param([string]$cmd)
+    $topic = "home/relay/$DeviceId/command"
+    & $MQTTPub -h $Broker -t $topic -m $cmd
+    Write-Host "Command '$cmd' sent to device $DeviceId"
+}
+
+# Main execution
+switch ($Command) {
+    "on" { Send-RelayCommand "on" }
+    "off" { Send-RelayCommand "off" }
+    "toggle" { Send-RelayCommand "toggle" }
+    "status" { Send-RelayCommand "status" }
+    default { Write-Host "Invalid command" }
+}</code></pre>
+</div>
+
+<div class="page-break">
+<h1 id="maintenance">14. Maintenance Scripts</h1>
+
+<div class="script-section">
+<div class="script-title">Health Check Script (health_check.bat)</div>
+<pre><code>@echo off
+setlocal enabledelayedexpansion
+
+:: Configuration
+set DEVICE_ID=a1b2c3
+set BROKER=broker.emqx.io
+set MQTT_PUB=mosquitto_pub.exe
+set MQTT_SUB=mosquitto_sub.exe
+
+echo ESP8266 Health Check Utility
+echo Device ID: %DEVICE_ID%
+echo Broker: %BROKER%
+echo Current Time: %date% %time%
+echo.
+
+echo === HEALTH CHECK STARTING ===
+echo.
+
+echo 1. Testing MQTT Broker Connection...
+%MQTT_PUB% -h %BROKER% -t "test/health_check" -m "test" > nul 2>&1
+if %errorlevel% equ 0 (
+    echo   ✓ MQTT Broker Connection: OK
+) else (
+    echo   ✗ MQTT Broker Connection: FAILED
+    goto end
+)
+
+echo 2. Testing Device Responsiveness...
+%MQTT_PUB% -h %BROKER% -t "home/relay/%DEVICE_ID%/command" -m "status"
+echo   Waiting for device response...
+timeout 10 %MQTT_SUB% -h %BROKER% -t "home/relay/%DEVICE_ID%/status" -C 1 > temp_status.txt 2>&1
+if exist temp_status.txt (
+    echo   ✓ Device Response: OK
+    del temp_status.txt
+) else (
+    echo   ✗ Device Response: TIMEOUT
+)
+
+:end
+echo.
+echo === HEALTH CHECK COMPLETED ===
+echo Report generated at: %date% %time%
+pause</code></pre>
+</div>
+</div>
+
+<div class="page-break">
+<h1 id="reference">15. Quick Reference</h1>
+
+<h2>Essential Windows Commands</h2>
+<div class="success">
+<strong>Basic Control:</strong>
+<div class="command-block">
+:: Turn relay ON/OFF/Toggle
+mosquitto_pub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/command" -m "on"
+mosquitto_pub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/command" -m "off"
+mosquitto_pub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/command" -m "toggle"
+</div>
+
+<strong>Status & Monitoring:</strong>
+<div class="command-block">
+:: Get status and monitor
+mosquitto_pub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/command" -m "status"
+mosquitto_sub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/+"
+mosquitto_sub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/heartbeat"
+</div>
+
+<strong>OTA Updates:</strong>
+<div class="command-block">
+:: Check version and update
+mosquitto_pub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/ota" -m "{\"command\": \"check_version\"}"
+mosquitto_pub.exe -h broker.emqx.io -t "home/relay/[DEVICE_ID]/ota" -m "{\"command\": \"update\", \"url\": \"https://example.com/firmware.bin\", \"version\": \"3.3\"}"
+</div>
+</div>
+
+<h2>Batch Script Templates</h2>
+<div class="script-section">
+<div class="script-title">Quick Control Template</div>
+<pre><code>@echo off
+set DEVICE_ID=your_device_id
+set BROKER=broker.emqx.io
+mosquitto_pub.exe -h %BROKER% -t "home/relay/%DEVICE_ID%/command" -m "%1"
+
+REM Usage: control.bat on|off|toggle|status</code></pre>
+</div>
+
+<h2>Installation Notes</h2>
+<div class="info">
+<strong>Windows Setup:</strong>
+<ol>
+    <li>Download and install Mosquitto MQTT clients for Windows</li>
+    <li>Add Mosquitto installation directory to system PATH</li>
+    <li>Verify installation: <code>mosquitto_pub.exe --help</code></li>
+    <li>Copy provided batch scripts to working directory</li>
+    <li>Edit device IDs and broker settings in scripts</li>
+</ol>
+</div>
+
+<h2>Script Configuration</h2>
+<p>All batch scripts require these variables:</p>
+<ul>
+    <li><strong>DEVICE_ID</strong> - ESP8266 device ID (chip ID in hex)</li>
+    <li><strong>BROKER</strong> - MQTT broker hostname or IP</li>
+    <li><strong>MQTT_PUB / MQTT_SUB</strong> - Paths to mosquitto executables</li>
+</ul>
+
+<h2>Common Pin Assignments</h2>
+<table>
+    <tr>
+        <th>Component</th>
+        <th>ESP8266 Pin</th>
+        <th>GPIO</th>
+        <th>Function</th>
+    </tr>
+    <tr>
+        <td>Relay Control</td>
+        <td>D1</td>
+        <td>GPIO5</td>
+        <td>Digital Output (HIGH = ON)</td>
+    </tr>
+    <tr>
+        <td>Manual Button</td>
+        <td>D3</td>
+        <td>GPIO0</td>
+        <td>Digital Input (Pull-up)</td>
+    </tr>
+    <tr>
+        <td>Status LED</td>
+        <td>Built-in</td>
+        <td>GPIO2</td>
+        <td>Digital Output (Inverted)</td>
+    </tr>
+</table>
+
+<h2>MQTT Topic Summary</h2>
+<table>
+    <tr>
+        <th>Topic</th>
+        <th>Direction</th>
+        <th>Purpose</th>
+    </tr>
+    <tr>
+        <td>home/relay/[ID]/command</td>
+        <td>Subscribe</td>
+        <td>Receive control commands</td>
+    </tr>
+    <tr>
+        <td>home/relay/[ID]/status</td>
+        <td>Publish</td>
+        <td>Device status updates</td>
+    </tr>
+    <tr>
+        <td>home/relay/[ID]/heartbeat</td>
+        <td>Publish</td>
+        <td>Periodic health check (60s)</td>
+    </tr>
+    <tr>
+        <td>home/relay/[ID]/ota</td>
+        <td>Both</td>
+        <td>OTA update commands/status</td>
+    </tr>
+    <tr>
+        <td>home/relay/[ID]/connection</td>
+        <td>Publish</td>
+        <td>Connection events</td>
+    </tr>
+</table>
+
+<h2>Troubleshooting Checklist</h2>
+<div class="warning">
+<strong>Device Issues:</strong>
+<ul>
+    <li>☐ Check power supply (5V recommended)</li>
+    <li>☐ Verify WiFi credentials in config portal</li>
+    <li>☐ Confirm MQTT broker accessibility</li>
+    <li>☐ Monitor serial output for errors</li>
+    <li>☐ Check device ID matches topic structure</li>
+</ul>
+
+<strong>Communication Issues:</strong>
+<ul>
+    <li>☐ Test MQTT broker with mosquitto tools</li>
+    <li>☐ Verify topic names and device ID</li>
+    <li>☐ Check network connectivity</li>
+    <li>☐ Monitor heartbeat messages</li>
+    <li>☐ Validate JSON command format</li>
+</ul>
+
+<strong>OTA Update Issues:</strong>
+<ul>
+    <li>☐ Ensure firmware URL is accessible</li>
+    <li>☐ Check available memory (>10KB)</li>
+    <li>☐ Verify firmware compatibility</li>
+    <li>☐ Monitor OTA status messages</li>
+    <li>☐ Cancel if memory issues occur</li>
+</ul>
+</div>
+
+<h2>Version History</h2>
+<table>
+    <tr>
+        <th>Version</th>
+        <th>Date</th>
+        <th>Changes</th>
+    </tr>
+    <tr>
+        <td>3.2</td>
+        <td>Current</td>
+        <td>Enhanced OTA, improved error handling, memory monitoring, enhanced MQTT structure</td>
+    </tr>
+    <tr>
+        <td>3.1</td>
+        <td>Previous</td>
+        <td>Added WiFiManager integration, improved button handling</td>
+    </tr>
+    <tr>
+        <td>3.0</td>
+        <td>Previous</td>
+        <td>Initial release with basic MQTT and OTA support</td>
+    </tr>
+</table>
+</div>
+
+<div class="page-break">
+<h1>Appendix A: Complete Batch Script Collection</h1>
+
+<div class="script-section">
+<div class="script-title">Multi-Device Manager (multi_device.bat)</div>
+<pre><code>@echo off
+setlocal enabledelayedexpansion
+
+:: Configuration - Add your device IDs here
+set DEVICE_COUNT=3
+set DEVICE_1=a1b2c3
+set DEVICE_2=b2c3d4
+set DEVICE_3=c3d4e5
+set BROKER=broker.emqx.io
+set MQTT_PUB=mosquitto_pub.exe
+
+echo Multiple ESP8266 Device Manager
+echo Broker: %BROKER%
+echo Configured Devices: %DEVICE_COUNT%
+for /l %%i in (1,1,%DEVICE_COUNT%) do (
+    echo   %%i. !DEVICE_%%i!
+)
+echo.
+
+:menu
+echo Choose an option:
+echo 1. Turn All Relays ON
+echo 2. Turn All Relays OFF
+echo 3. Toggle All Relays
+echo 4. Get All Status
+echo 5. Control Single Device
+echo 6. Exit
+echo.
+set /p choice=Enter choice (1-6): 
+
+if "%choice%"=="1" (
+    echo Turning all relays ON...
+    for /l %%i in (1,1,%DEVICE_COUNT%) do (
+        echo Sending ON command to !DEVICE_%%i!
+        %MQTT_PUB% -h %BROKER% -t "home/relay/!DEVICE_%%i!/command" -m "on"
+    )
+    echo All commands sent.
+    goto menu
+)
+
+if "%choice%"=="6" (
+    echo Goodbye!
+    exit /b 0
+)
+
+echo Invalid choice. Please try again.
+goto menu</code></pre>
+</div>
+
+<div class="script-section">
+<div class="script-title">Scheduled Tasks Manager (scheduled_tasks.bat)</div>
+<pre><code>@echo off
+setlocal enabledelayedexpansion
+
+:: Configuration
+set DEVICE_ID=a1b2c3
+set BROKER=broker.emqx.io
+set MQTT_PUB=mosquitto_pub.exe
+
+echo ESP8266 Scheduled Tasks Manager
+echo Device ID: %DEVICE_ID%
+echo.
+
+:menu
+echo Choose schedule type:
+echo 1. Daily ON/OFF Schedule
+echo 2. Weekly Schedule
+echo 3. Interval Toggle
+echo 4. View Current Time
+echo 5. Exit
+echo.
+set /p choice=Enter choice (1-5): 
+
+if "%choice%"=="1" (
+    echo Daily Schedule Setup
+    set /p on_hour=Enter ON hour (24-hour format): 
+    set /p on_minute=Enter ON minute: 
+    set /p off_hour=Enter OFF hour (24-hour format): 
+    set /p off_minute=Enter OFF minute: 
+    
+    echo Creating daily schedule...
+    echo ON at %on_hour%:%on_minute%
+    echo OFF at %off_hour%:%off_minute%
+    
+    :: Create scheduled task for ON
+    schtasks /create /tn "ESP8266_Relay_ON_%DEVICE_ID%" /tr "mosquitto_pub.exe -h %BROKER% -t home/relay/%DEVICE_ID%/command -m on" /sc daily /st %on_hour%:%on_minute% /f
+    
+    :: Create scheduled task for OFF
+    schtasks /create /tn "ESP8266_Relay_OFF_%DEVICE_ID%" /tr "mosquitto_pub.exe -h %BROKER% -t home/relay/%DEVICE_ID%/command -m off" /sc daily /st %off_hour%:%off_minute% /f
+    
+    echo Daily schedule created successfully!
+    goto menu
+)
+
+if "%choice%"=="5" (
+    echo Goodbye!
+    exit /b 0
+)
+
+echo Invalid choice. Please try again.
+goto menu</code></pre>
+</div>
+</div>
+
+<div class="page-break">
+<h1>Appendix B: JSON Message Examples</h1>
+
+<h2>Command Messages (Send to /command topic)</h2>
+<div class="json-block">
+"on"        // Turn relay ON
+"off"       // Turn relay OFF
+"toggle"    // Toggle relay state
+"status"    // Request status
+"info"      // Request device info
+"restart"   // Restart device
+"reset_wifi" // Reset WiFi config
+</div>
+
+<h2>OTA Command Messages (Send to /ota topic)</h2>
+<div class="json-block">
+// Check version
+{
+  "command": "check_version"
+}
+
+// Update firmware
+{
+  "command": "update",
+  "url": "https://example.com/firmware.bin",
+  "version": "3.3"
+}
+
+// Force update
+{
+  "command": "force_update",
+  "url": "https://example.com/firmware.bin",
+  "version": "3.3"
+}
+
+// Cancel update
+{
+  "command": "cancel"
+}
+</div>
+
+<h2>Status Response Messages (Published to /status topic)</h2>
+<div class="json-block">
+{
+  "device_id": "a1b2c3",
+  "device_name": "ESP8266_a1b2c3",
+  "relay": "ON",
+  "uptime": 12345,
+  "free_heap": 32768,
+  "rssi": -45,
+  "ip": "192.168.1.100",
+  "ssid": "MyWiFi",
+  "firmware_version": "3.2",
+  "ota_in_progress": false,
+  "timestamp": 67890
+}
+</div>
+
+<h2>Device Info Response (Published to /status/info topic)</h2>
+<div class="json-block">
+{
+  "device_id": "a1b2c3",
+  "device_name": "ESP8266_a1b2c3",
+  "chip_id": "A1B2C3",
+  "flash_size": 4194304,
+  "free_heap": 32768,
+  "boot_time": 1234,
+  "uptime": 12345,
+  "wifi_ssid": "MyWiFi",
+  "ip": "192.168.1.100",
+  "mac": "AA:BB:CC:DD:EE:FF",
+  "rssi": -45,
+  "mqtt_server": "broker.emqx.io",
+  "mqtt_port": 1883,
+  "relay_state": "ON",
+  "total_commands": 42,
+  "total_reconnects": 3,
+  "total_ota_updates": 2,
+  "firmware_version": "3.2",
+  "ota_capable": true,
+  "ota_in_progress": false
+}
+</div>
+</div>
+
+<div class="page-break">
+<h1>Appendix C: Wiring Diagrams</h1>
+
+<h2>Basic Wiring Setup</h2>
+<div class="info">
+<strong>ESP8266 NodeMCU to Relay Module:</strong>
+<ul>
+    <li>ESP8266 3.3V → Relay VCC (if 3.3V relay) or use external 5V supply</li>
+    <li>ESP8266 GND → Relay GND</li>
+    <li>ESP8266 D1 (GPIO5) → Relay IN</li>
+</ul>
+
+<strong>Optional Push Button:</strong>
+<ul>
+    <li>Button Pin 1 → ESP8266 D3 (GPIO0)</li>
+    <li>Button Pin 2 → ESP8266 GND</li>
+    <li>Internal pull-up resistor is used</li>
+</ul>
+
+<strong>Power Supply:</strong>
+<ul>
+    <li>ESP8266: 3.3V (USB or external regulator)</li>
+    <li>Relay: 5V recommended for reliable operation</li>
+    <li>Load: According to relay specifications</li>
+</ul>
+</div>
+
+<h2>Safety Considerations</h2>
+<div class="warning">
+<strong>Important Safety Notes:</strong>
+<ul>
+    <li>⚠️ Always disconnect power when making connections</li>
+    <li>⚠️ Use appropriate relay ratings for your load</li>
+    <li>⚠️ Ensure proper isolation for AC loads</li>
+    <li>⚠️ Use fuses appropriate for your application</li>
+    <li>⚠️ Follow local electrical codes and regulations</li>
+    <li>⚠️ Consider using optocouplers for additional isolation</li>
+</ul>
+</div>
+</div>
+
+<div class="page-break" style="text-align: center; padding-top: 3in;">
+<h1>End of Documentation</h1>
+<div class="info" style="max-width: 500px; margin: 40px auto;">
+    <h2>Support Information</h2>
+    <p><strong>Documentation Version:</strong> 3.2</p>
+    <p><strong>Firmware Version:</strong> 3.2</p>
+    <p><strong>Generated:</strong> <span id="footerDate"></span></p>
+    <br>
+    <p>This documentation provides complete coverage of the ESP8266 MQTT Relay Controller with Windows automation scripts. For the latest updates and additional resources, please refer to the project repository.</p>
+    <br>
+    <p><strong>Disclaimer:</strong> This firmware and documentation are provided as-is for educational and development purposes. Users are responsible for proper implementation, testing, and compliance with local regulations for IoT devices.</p>
+</div>
+</div>
+
+<script>
+// Set current date
+const now = new Date();
+const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+document.getElementById('currentDate').textContent = dateStr;
+document.getElementById('footerDate').textContent = dateStr;
+
+// Add PDF generation button
+const button = document.createElement('button');
+button.textContent = 'Generate PDF';
+button.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 24px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 1000;
+    print: none;
+`;
+
+button.onclick = function() {
+    // Remove the button before printing
+    button.style.display = 'none';
+    
+    // Add print-specific styles
+    const printStyle = document.createElement('style');
+    printStyle.textContent = `
+        @media print {
+            button { display: none !important; }
+            body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+        }
+    `;
+    document.head.appendChild(printStyle);
+    
+    // Trigger print dialog
+    window.print();
+    
+    // Show button again after printing
+    setTimeout(() => {
+        button.style.display = 'block';
+    }, 1000);
+};
+
+document.body.appendChild(button);
+
+// Add smooth scrolling for anchor links
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('a[href^="#"]');
+    links.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+});
+</script>
+
+</body>
+</html>
