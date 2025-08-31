@@ -11,6 +11,6 @@ REM Commit with the entered message
 git commit -m "%commit_msg%"
 
 REM Push to remote (default: origin main)
-git push origin main
+git push origin master
 
 pause
